@@ -14,7 +14,7 @@ describe('projects plugin', () => {
         projects: {
           createProjectCard: createSpy(),
           getProjectColumns: createSpy().mockReturnValue(Promise.resolve([require('../fixtures/projects')])),
-          getRepoProjects: createSpy().mockReturnValue(Promise.resolve([require('../fixtures/projects')]))
+          listForRepo: createSpy().mockReturnValue(Promise.resolve([require('../fixtures/projects')]))
         }
       }
     }
@@ -24,7 +24,7 @@ describe('projects plugin', () => {
   describe('createCard', () => {
     it('creates a project card', () => {
       projects.createCard(context, {project: 'myProject', column: 'myProject'}).then(() => {
-        expect(context.github.projects.getRepoProjects).toHaveBeenCalledWith({
+        expect(context.github.projects.listForRepo).toHaveBeenCalledWith({
           owner: 'pholleran',
           repo: 'test'
         })

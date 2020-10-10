@@ -1,16 +1,16 @@
-const {createRobot} = require('probot')
+const {Application} = require('probot')
 const app = require('..')
 
 describe('app', () => {
   let robot
   let github
   let context = {
-    event: 'issues',
+    name: 'issues',
     payload: require(`./fixtures/webhook/comment.created`)
   }
 
   const configure = async (content, ctx) => {
-    github.repos.getContent.mockImplementation(params => Promise.resolve({
+    github.repos.getContents.mockImplementation(params => Promise.resolve({
       data: {
         content: Buffer
           .from(typeof content === 'function' ? content(params) : content)
@@ -22,16 +22,16 @@ describe('app', () => {
   }
 
   beforeEach(() => {
-    robot = createRobot()
+    robot = new Application()
     app(robot)
 
     github = {
       repos: {
-        getContent: jest.fn().mockReturnValue(Promise.resolve({}))
+        getContents: jest.fn().mockReturnValue(Promise.resolve({}))
       },
       issues: {
         createComment: jest.fn(),
-        edit: jest.fn()
+        update: jest.fn()
       }
     }
   })
@@ -58,7 +58,7 @@ describe('app', () => {
 
   describe('filter', () => {
     const context = {
-      event: 'issues',
+      name: 'issues',
       payload: require(`./fixtures/webhook/issues.labeled`)
     }
 
@@ -68,7 +68,7 @@ describe('app', () => {
           .filter((e) => e.payload.label.name == "bug")
           .close();
         `, context)
-      expect(github.issues.edit).toHaveBeenCalled()
+      expect(github.issues.update).toHaveBeenCalled()
     })
 
     it('does not call action when conditions do not match', async () => {
@@ -77,7 +77,7 @@ describe('app', () => {
           .filter((e) => e.payload.label.name == "foobar")
           .close();
         `, context)
-      expect(github.issues.edit).toHaveBeenCalledTimes(0)
+      expect(github.issues.update).toHaveBeenCalledTimes(0)
     })
   })
 
@@ -89,7 +89,7 @@ describe('app', () => {
         }
         return 'include(".github/triage.js");'
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'bkeepers-inc',
         repo: 'test',
         path: '.github/triage.js'
@@ -120,18 +120,18 @@ describe('app', () => {
           include("script-b.js");
         `
       })
-      expect(github.repos.getContent).toHaveBeenCalledTimes(1 + 3 + 2)
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledTimes(1 + 3 + 2)
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'other',
         repo: 'repo',
         path: 'script-b.js'
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'another',
         repo: 'repo',
         path: 'script-b.js'
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'bkeepers-inc',
         repo: 'test',
         path: 'script-b.js'
@@ -165,7 +165,7 @@ describe('app', () => {
         }
         return 'include("other/repo:script-a.js");'
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'other',
         repo: 'repo',
         path: 'content.md'
@@ -183,12 +183,12 @@ describe('app', () => {
             .comment(contents("label.md"));
         `
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'other',
         repo: 'repo',
         path: 'content.md'
       })
-      expect(github.repos.getContent).toHaveBeenCalledWith({
+      expect(github.repos.getContents).toHaveBeenCalledWith({
         owner: 'bkeepers-inc',
         repo: 'test',
         path: 'label.md'

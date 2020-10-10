@@ -25,7 +25,7 @@ describe('Configuration', () => {
         payload,
         github: {
           repos: {
-            getContent: createSpy().mockReturnValue(Promise.resolve(content))
+            getContents: createSpy().mockReturnValue(Promise.resolve(content))
           }
         },
         issue: createSpy().mockImplementation(args => args),
@@ -36,7 +36,7 @@ describe('Configuration', () => {
 
     it('includes from the repo', () => {
       config.include('foo.js')
-      expect(context.github.repos.getContent).toHaveBeenCalledWith({
+      expect(context.github.repos.getContents).toHaveBeenCalledWith({
         path: 'foo.js'
       })
     })
@@ -47,7 +47,7 @@ describe('Configuration', () => {
 
     it('includes from another repository', () => {
       config.include('atom/configs:foo.js#branch')
-      expect(context.github.repos.getContent).toHaveBeenCalledWith({
+      expect(context.github.repos.getContents).toHaveBeenCalledWith({
         owner: 'atom',
         repo: 'configs',
         path: 'foo.js',

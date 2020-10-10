@@ -14,7 +14,7 @@ describe('issues plugin', () => {
         issues: {
           lock: createSpy(),
           unlock: createSpy(),
-          edit: createSpy(),
+          update: createSpy(),
           addLabels: createSpy(),
           createComment: createSpy(),
           addAssigneesToIssue: createSpy(),
@@ -54,7 +54,7 @@ describe('issues plugin', () => {
     it('opens an issue', () => {
       issues.open(context)
 
-      expect(context.github.issues.edit).toHaveBeenCalledWith({
+      expect(context.github.issues.update).toHaveBeenCalledWith({
         state: 'open'
       })
     })
@@ -62,7 +62,7 @@ describe('issues plugin', () => {
     it('closes an issue', () => {
       issues.close(context)
 
-      expect(context.github.issues.edit).toHaveBeenCalledWith({
+      expect(context.github.issues.update).toHaveBeenCalledWith({
         state: 'closed'
       })
     })
