@@ -1,48 +1,60 @@
-const {Application} = require('probot')
 const app = require('..')
+const nock = require('nock')
+const {Probot} = require('probot')
+
+const issueCreatedPayload = require('./fixtures/webhook/issue.created.bkeepers-inc')
+const issueLabeledPayload = require('./fixtures/webhook/issues.labeled')
+const probotContent = require('./fixtures/content/probot')
 
 describe('app', () => {
   let robot
   let github
-  let context = {
-    name: 'issues',
-    payload: require(`./fixtures/webhook/comment.created`)
-  }
+  let context
 
-  const configure = async (content, ctx) => {
-    github.repos.getContents.mockImplementation(params => Promise.resolve({
-      data: {
-        content: Buffer
-          .from(typeof content === 'function' ? content(params) : content)
-          .toString('base64')
-      }
-    }))
-    robot.auth = () => Promise.resolve(github)
-    await robot.receive(ctx || context)
+  const configure = async (content, path = '.github/probot.js') => {
+    const probotContentCopy = JSON.parse(JSON.stringify(probotContent))
+    probotContentCopy.content = Buffer.from(content).toString('base64')
+    nock('https://api.github.com')
+      .get('/repos/bkeepers-inc/test/contents/' + encodeURIComponent(path))
+      .reply(200, probotContentCopy)
   }
 
   beforeEach(() => {
-    robot = new Application()
-    app(robot)
+    nock.disableNetConnect()
+    robot = new Probot({
+      id: 1,
+      githubToken: 'test',
+      throttleOptions: { enabled: false }
+    })
+    robot.load(app)
+  })
 
-    github = {
-      repos: {
-        getContents: jest.fn().mockReturnValue(Promise.resolve({}))
-      },
-      issues: {
-        createComment: jest.fn(),
-        update: jest.fn()
-      }
-    }
+  afterEach(() => {
+    nock.cleanAll()
+    nock.enableNetConnect()
   })
 
   describe('reply to new issue with a comment', () => {
-    it('posts a comment', async () => {
+    it.only('posts a comment', async () => {
+      // TODO do we need to mock this?
+      // nock("https://api.github.com")
+      //   .post("/app/installations/1/access_tokens")
+      //   .reply(200, { token: "test" });
+
       await configure(`
         on("issues")
           .comment("Hello World!");
         `)
-      expect(github.issues.createComment).toHaveBeenCalled()
+
+      const issueCreatedBody = { body: 'Hello World!' }
+      nock('https://api.github.com')
+        .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
+          expect(body).toMatchObject(issueCreatedBody)
+          return true
+        })
+        .reply(200)
+
+      await robot.receive({ name: 'issues', payload: issueCreatedPayload })
     })
   })
 
@@ -52,58 +64,55 @@ describe('app', () => {
         on("issues.labeled")
           .comment("Hello World!");
         `)
-      expect(github.issues.createComment).toHaveBeenCalledTimes(0)
+
+      // TODO do we need to check that comment was not posted
     })
   })
 
   describe('filter', () => {
-    const context = {
-      name: 'issues',
-      payload: require(`./fixtures/webhook/issues.labeled`)
-    }
-
-    it('calls action when condition matches', async () => {
+    it.only('calls action when condition matches', async () => {
       await configure(`
         on("issues.labeled")
           .filter((e) => e.payload.label.name == "bug")
           .close();
-        `, context)
-      expect(github.issues.update).toHaveBeenCalled()
+        `)
+
+      const issueCreatedBody = { state: 'closed' }
+      nock('https://api.github.com')
+        .patch('/repos/bkeepers-inc/test/issues/35', (body) => {
+          expect(body).toMatchObject(issueCreatedBody)
+          return true
+        })
+        .reply(200)
+
+      await robot.receive({ name: 'issues', payload: issueLabeledPayload })
     })
 
-    it('does not call action when conditions do not match', async () => {
+    it.only('does not call action when conditions do not match', async () => {
       await configure(`
         on("issues.labeled")
           .filter((e) => e.payload.label.name == "foobar")
           .close();
-        `, context)
-      expect(github.issues.update).toHaveBeenCalledTimes(0)
+        `)
+
+      await robot.receive({ name: 'issues', payload: issueLabeledPayload })
     })
   })
 
   describe('include', () => {
-    it('includes a file in the local repository', async () => {
-      await configure(params => {
-        if (params.path === '.github/triage.js') {
-          return 'on("issues").comment("Hello!");'
-        }
-        return 'include(".github/triage.js");'
-      })
-      expect(github.repos.getContents).toHaveBeenCalledWith({
-        owner: 'bkeepers-inc',
-        repo: 'test',
-        path: '.github/triage.js'
-      })
-    })
+    it.only('executes included rules', async () => {
+      await configure('include(".github/triage.js");')
+      await configure('on("issues").comment("Hello!");', '.github/triage.js')
 
-    it('executes included rules', async () => {
-      await configure(params => {
-        if (params.path === '.github/triage.js') {
-          return 'on("issues").comment("Hello!");'
-        }
-        return 'include(".github/triage.js");'
-      })
-      expect(github.issues.createComment).toHaveBeenCalled()
+      const issueCreatedBody = { body: 'Hello!' }
+      nock('https://api.github.com')
+        .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
+          expect(body).toMatchObject(issueCreatedBody)
+          return true
+        })
+        .reply(200)
+
+      await robot.receive({ name: 'issues', payload: issueCreatedPayload })
     })
 
     it('includes files relative to included repository', async () => {
