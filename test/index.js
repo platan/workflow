@@ -38,20 +38,14 @@ describe('app', () => {
 
   describe('reply to new issue with a comment', () => {
     it('posts a comment', async () => {
-      // TODO do we need to mock this?
-      // nock("https://api.github.com")
-      //   .post("/app/installations/1/access_tokens")
-      //   .reply(200, { token: "test" });
-
       await configure(`
         on("issues")
           .comment("Hello World!");
         `)
 
-      const commentBody = { body: 'Hello World!' }
       nock('https://api.github.com')
         .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
-          expect(body).toMatchObject(commentBody)
+          expect(body).toMatchObject({ body: 'Hello World!' })
           return true
         })
         .reply(200)
@@ -67,7 +61,7 @@ describe('app', () => {
           .comment("Hello World!");
         `)
 
-      // TODO do we need to check that comment was not posted
+      await robot.receive({ name: 'issues', payload: issueCreatedPayload })
     })
   })
 
@@ -79,10 +73,9 @@ describe('app', () => {
           .close();
         `)
 
-      const issueCreatedBody = { state: 'closed' }
       nock('https://api.github.com')
         .patch('/repos/bkeepers-inc/test/issues/35', (body) => {
-          expect(body).toMatchObject(issueCreatedBody)
+          expect(body).toMatchObject({ state: 'closed' })
           return true
         })
         .reply(200)
@@ -106,10 +99,9 @@ describe('app', () => {
       await configure('include(".github/triage.js");')
       await configure('on("issues").comment("Hello!");', '.github/triage.js')
 
-      const commentBody = { body: 'Hello!' }
       nock('https://api.github.com')
         .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
-          expect(body).toMatchObject(commentBody)
+          expect(body).toMatchObject({ body: 'Hello!' })
           return true
         })
         .reply(200)
@@ -119,10 +111,10 @@ describe('app', () => {
 
     it('includes files relative to included repository', async () => {
       await configure(`
-      include("other/repo:script-a.js");
-      include("another/repo:script-a.js");
-      include("script-b.js");
-      `)
+        include("other/repo:script-a.js");
+        include("another/repo:script-a.js");
+        include("script-b.js");
+        `)
       await configure('include("script-b.js")', 'script-a.js', 'other/repo')
       await configure('include("script-b.js")', 'script-a.js', 'another/repo')
       await configure('', 'script-b.js', 'other/repo')
@@ -140,10 +132,9 @@ describe('app', () => {
       )
       await configure('file contents', '.github/ISSUE_REPLY_TEMPLATE')
 
-      const commentBody = { body: 'file contents' }
       nock('https://api.github.com')
         .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
-          expect(body).toMatchObject(commentBody)
+          expect(body).toMatchObject({ body: 'file contents' })
           return true
         })
         .reply(200)
@@ -160,10 +151,9 @@ describe('app', () => {
       )
       await configure('file contents', 'content.md', 'other/repo')
 
-      const commentBody = { body: 'file contents' }
       nock('https://api.github.com')
         .post('/repos/bkeepers-inc/test/issues/1/comments', (body) => {
-          expect(body).toMatchObject(commentBody)
+          expect(body).toMatchObject({ body: 'file contents' })
           return true
         })
         .reply(200)
@@ -176,7 +166,7 @@ describe('app', () => {
         on("issues")
           .comment(contents("other/repo:content.md"))
           .comment(contents("label.md"));
-      `)
+        `)
       await configure('content.md - file contents', 'content.md', 'other/repo')
       await configure('label.md - file contents', 'label.md')
 
