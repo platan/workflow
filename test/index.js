@@ -54,6 +54,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
   })
 
@@ -65,6 +67,8 @@ describe('app', () => {
         `)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
   })
 
@@ -84,6 +88,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueLabeledPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
 
     it('does not call action when conditions do not match', async () => {
@@ -110,6 +116,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
 
     it('includes files relative to included repository', async () => {
@@ -125,6 +133,8 @@ describe('app', () => {
       await configure('', 'script-b.js')
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
   })
 
@@ -143,6 +153,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
 
     it('gets contents relative to included repository', async () => {
@@ -162,6 +174,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
 
     it('gets multiple contents without mismatching source parameters', async () => {
@@ -187,6 +201,8 @@ describe('app', () => {
         .reply(200)
 
       await robot.receive({ name: 'issues', payload: issueCreatedPayload })
+
+      expect(nock.activeMocks()).toEqual([])
     })
   })
 })
