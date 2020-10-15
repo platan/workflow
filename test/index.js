@@ -1,6 +1,6 @@
 const app = require('..')
 const nock = require('nock')
-const { Probot } = require('probot')
+const { Probot, ProbotOctokit } = require('probot')
 
 const issueCreatedPayload = require('./fixtures/webhook/issue.created.bkeepers-inc')
 const issueLabeledPayload = require('./fixtures/webhook/issues.labeled')
@@ -26,7 +26,10 @@ describe('app', () => {
     robot = new Probot({
       id: 1,
       githubToken: 'test',
-      throttleOptions: { enabled: false }
+      Octokit: ProbotOctokit.defaults({
+        retry: { enabled: false },
+        throttle: { enabled: false }
+      })
     })
     robot.load(app)
   })
@@ -163,10 +166,10 @@ describe('app', () => {
 
     it('gets multiple contents without mismatching source parameters', async () => {
       await configure(`
-        on("issues")
-          .comment(contents("other/repo:content.md"))
-          .comment(contents("label.md"));
-        `)
+      on("issues")
+      .comment(contents("other/repo:content.md"))
+      .comment(contents("label.md"));
+      `)
       await configure('content.md - file contents', 'content.md', 'other/repo')
       await configure('label.md - file contents', 'label.md')
 
