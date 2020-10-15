@@ -127,8 +127,8 @@ describe('app', () => {
         include("script-b.js");
         `)
       await configure('include("script-b.js")', 'script-a.js', 'other/repo')
-      await configure('include("script-b.js")', 'script-a.js', 'another/repo')
       await configure('', 'script-b.js', 'other/repo')
+      await configure('include("script-b.js")', 'script-a.js', 'another/repo')
       await configure('', 'script-b.js', 'another/repo')
       await configure('', 'script-b.js')
 
